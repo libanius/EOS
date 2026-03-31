@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+<meta name="theme-color" content="#08080d"/>
+<title>EOS — Plano de Execução</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0a0a0f; --sf:#13131a; --sf2:#1c1c27; --bd:#2a2a38;
+  --ac:#00e5a0; --ac2:#7c6bff; --ac3:#ff6b6b; --warn:#ffb347;
+  --tx:#f0f0f8; --mu:#8888a8; --body:#c4c4dc;
+}
+html,body{min-height:100%;background:var(--bg);color:var(--tx);font-family:'DM Sans',-apple-system,sans-serif;line-height:1.6;}
+.mono{font-family:'DM Mono',ui-monospace,monospace;}
+
+/* PAGE */
+.page{max-width:900px;margin:0 auto;padding:52px 24px 100px;}
+
+/* HEADER */
+.header{margin-bottom:60px;padding-bottom:40px;border-bottom:1px solid var(--bd);}
+.logo-row{display:flex;align-items:center;gap:12px;margin-bottom:24px;}
+.logo{font-size:15px;font-weight:500;letter-spacing:4px;color:var(--tx);}
+.version{font-size:10px;font-weight:500;letter-spacing:1.5px;color:var(--ac2);background:rgba(124,107,255,0.1);border:1px solid rgba(124,107,255,0.2);border-radius:20px;padding:3px 10px;}
+.header h1{font-size:clamp(28px,5vw,48px);font-weight:700;color:var(--tx);letter-spacing:-0.5px;line-height:1.1;margin-bottom:12px;}
+.header h1 span{color:var(--ac);}
+.header p{font-size:15px;color:#c8c8e0;max-width:560px;line-height:1.8;}
+
+/* SUMMARY STRIP */
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:60px;}
+.sum-card{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:16px;}
+.sum-num{font-size:28px;font-weight:700;color:var(--ac);margin-bottom:4px;letter-spacing:-1px;}
+.sum-label{font-size:12px;color:#c0c0d8;line-height:1.5;}
+
+/* SECTION LABEL */
+.sec-label{font-size:10px;font-weight:700;letter-spacing:1.8px;color:var(--mu);text-transform:uppercase;margin-bottom:20px;display:flex;align-items:center;gap:10px;}
+.sec-label::before{content:'';width:20px;height:1px;background:var(--mu);}
+
+/* PHASE */
+.phase{margin-bottom:40px;}
+.phase-header{display:flex;align-items:flex-start;gap:20px;margin-bottom:16px;cursor:pointer;user-select:none;}
+.phase-num{
+  width:44px;height:44px;border-radius:10px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:500;letter-spacing:0.5px;
+  border:1px solid var(--bd);background:var(--sf);color:var(--mu);
+  transition:all .2s;
+}
+.phase-header:hover .phase-num{border-color:var(--ac);color:var(--ac);}
+.phase.active .phase-num{background:var(--ac);color:#08080d;border-color:var(--ac);}
+.phase-meta{flex:1;}
+.phase-tag{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;}
+.phase-title{font-size:19px;font-weight:700;color:var(--tx);margin-bottom:6px;line-height:1.3;}
+.phase-sub{font-size:14px;color:#c8c8e0;line-height:1.75;margin-top:4px;}
+.phase-duration{font-size:11px;font-weight:500;color:var(--mu);background:var(--sf2);border:1px solid var(--bd);border-radius:20px;padding:3px 10px;display:inline-flex;align-items:center;gap:6px;margin-top:8px;}
+.phase-duration::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--mu);}
+
+/* PHASE BODY */
+.phase-body{margin-left:64px;display:none;}
+.phase.open .phase-body{display:block;}
+
+/* CONNECTOR LINE */
+.phase-connector{margin-left:21px;width:1px;height:20px;background:var(--bd);margin-bottom:0;}
+
+/* TASK GROUP */
+.task-group{margin-bottom:20px;}
+.task-group-label{font-size:10px;font-weight:700;letter-spacing:1.4px;color:var(--mu);text-transform:uppercase;margin-bottom:12px;padding-left:2px;}
+.task-list{display:flex;flex-direction:column;gap:8px;}
+.task{
+  background:var(--sf);border:1px solid var(--bd);border-radius:10px;
+  padding:16px 18px;display:flex;align-items:flex-start;gap:14px;
+}
+.task-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+.task-content{}
+.task-name{font-size:14px;font-weight:700;color:var(--tx);margin-bottom:5px;}
+.task-desc{font-size:13px;color:#c8c8e0;line-height:1.75;}
+.task-tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 8px;border-radius:4px;margin-top:6px;}
+
+/* DELIVERABLE BOX */
+.deliverable{
+  background:rgba(0,229,160,0.05);border:1px solid rgba(0,229,160,0.15);
+  border-radius:12px;padding:16px;margin-top:16px;
+}
+.deliverable-label{font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--ac);text-transform:uppercase;margin-bottom:10px;}
+.deliverable-items{display:flex;flex-direction:column;gap:6px;}
+.deliverable-item{font-size:13px;color:var(--tx);display:flex;align-items:center;gap:8px;line-height:1.65;}
+.deliverable-item::before{content:'✓';color:var(--ac);font-size:11px;font-weight:700;}
+
+/* WARNING BOX */
+.warn-box{
+  background:rgba(255,179,71,0.05);border:1px solid rgba(255,179,71,0.2);
+  border-radius:10px;padding:16px 18px;margin-top:12px;
+  font-size:13px;color:var(--warn);line-height:1.75;
+  display:flex;gap:10px;align-items:flex-start;
+}
+
+/* DEPENDENCY */
+.dep-box{
+  background:rgba(124,107,255,0.05);border:1px solid rgba(124,107,255,0.15);
+  border-radius:10px;padding:16px 18px;margin-top:12px;
+  font-size:13px;color:#c8c8e0;line-height:1.75;
+}
+.dep-box strong{color:var(--ac2);}
+
+/* STACK SECTION */
+.stack-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:40px;}
+.stack-card{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:16px;}
+.stack-layer{font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--ac);text-transform:uppercase;margin-bottom:12px;}
+.stack-items{display:flex;flex-direction:column;gap:6px;}
+.stack-item{font-size:13px;color:#c8c8e0;display:flex;align-items:center;gap:8px;line-height:1.7;}
+.stack-item-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+
+/* TOGGLE HINT */
+.toggle-hint{font-size:13px;color:#c0c0d8;margin-bottom:32px;display:flex;align-items:center;gap:8px;}
+.toggle-hint::before{content:'↕';color:var(--ac);}
+
+/* FOOTER NOTE */
+.footer-note{margin-top:60px;padding-top:32px;border-top:1px solid var(--bd);font-size:14px;color:#c8c8e0;line-height:1.85;}
+.footer-note strong{color:var(--tx);}
+
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo-row">
+      <span class="logo mono">EOS</span>
+      <span class="version mono">ROADMAP v1.0</span>
+    </div>
+    <h1>Plano de Execução<br/><span>do Blueprint ao Lançamento</span></h1>
+    <p>Cada fase tem uma sequência deliberada. Nenhuma fase depende de algo que ainda não foi construído. A ordem importa tanto quanto o conteúdo.</p>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="sec-label">Visão Geral</div>
+  <div class="summary">
+    <div class="sum-card">
+      <div class="sum-num mono">7</div>
+      <div class="sum-label">Fases de execução</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-num mono">~18</div>
+      <div class="sum-label">Semanas estimadas</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-num mono">3</div>
+      <div class="sum-label">Camadas de inteligência</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-num mono">1</div>
+      <div class="sum-label">Lançamento público</div>
+    </div>
+  </div>
+
+  <!-- TECH STACK -->
+  <div class="sec-label">Stack Tecnológica</div>
+  <div class="stack-grid">
+    <div class="stack-card">
+      <div class="stack-layer">Frontend</div>
+      <div class="stack-items">
+        <div class="stack-item"><span class="stack-item-dot" style="background:var(--ac)"></span>Next.js 14 (App Router)</div>
+        <div class="stack-item"><span class="stack-item-dot" style="background:var(--ac)"></span>Vercel (deploy)</div>
+        <div class="stack-item"><span class="stack-item-dot" style="background:var(--ac)"></span>PWA + Service Worker</div>
+        <div class="stack-item"><span class="stack-item-dot" style="background:var(--ac)"></span>Design System EOS v1</div>
+      </div>
+    </div>
+    <div class="stack-card">
+      <div class="stack-layer">Backend</div>
+      <div class="stack-items">
+        <div class="stack-item"><span class="stack-item-dot" style="background:var(--ac2)"></span>Supabase (Postgres + Auth)</div>
+        <div class="stack-item"><span class="stack-item-dot" style="background:var(--ac2)"></span>Vercel Functions (serverless)</div>
+        <div class="stack-item"><span class="stack-item-dot" style="background:var(--ac2)"></span>Row Level Security (RLS)</div>
+        <div class="stack-item"><span class="stack-item-dot" style="background:var(--ac2)"></span>Supabase Realtime</div>
+      </div>
+    </div>
+    <div class="stack-card">
+      <div class="stack-layer">IA & Dados</div>
+      <div class="stack-items">
+        <div class="stack-item"><span class="stack-item-dot" style="background:var(--ac3)"></span>Claude API (Sonnet)</div>
+        <div class="stack-item"><span class="stack-item-dot" style="background:var(--ac3)"></span>pgvector (embeddings)</div>
+        <div class="stack-item"><span class="stack-item-dot" style="background:var(--ac3)"></span>Knowledge Base (FEMA/CDC)</div>
+        <div class="stack-item"><span class="stack-item-dot" style="background:var(--ac3)"></span>IndexedDB (offline cache)</div>
+      </div>
+    </div>
+    <div class="stack-card">
+      <div class="stack-layer">Hardware (Fase 7)</div>
+      <div class="stack-items">
+        <div class="stack-item"><span class="stack-item-dot" style="background:var(--warn)"></span>ESP32 + LoRa SX1276</div>
+        <div class="stack-item"><span class="stack-item-dot" style="background:var(--warn)"></span>Mesh protocol (Meshtastic)</div>
+        <div class="stack-item"><span class="stack-item-dot" style="background:var(--warn)"></span>BLE bridge (app ↔ device)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOGGLE HINT -->
+  <div class="toggle-hint">Clique em qualquer fase para expandir os detalhes</div>
+
+  <!-- PHASES -->
+  <div class="sec-label">Fases de Execução</div>
+
+  <!-- ══════════════════════════════════════════
+       FASE 1
+  ══════════════════════════════════════════ -->
+  <div class="phase active open" id="p1">
+    <div class="phase-header" onclick="toggle('p1')">
+      <div class="phase-num mono">01</div>
+      <div class="phase-meta">
+        <div class="phase-tag" style="color:var(--ac)">Fundação</div>
+        <div class="phase-title">Infraestrutura, Auth & Data Model</div>
+        <div class="phase-sub">Nada funciona sem um banco bem modelado e autenticação sólida. Essa fase é o alicerce de tudo. Erros aqui custam refatoração cara depois.</div>
+        <div class="phase-duration mono">2 semanas</div>
+      </div>
+    </div>
+    <div class="phase-body">
+
+      <div class="task-group">
+        <div class="task-group-label">Projeto & Repositório</div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac)"></div>
+            <div class="task-content">
+              <div class="task-name">Criar repositório GitHub + estrutura Next.js</div>
+              <div class="task-desc">App Router, TypeScript, ESLint. Configurar Vercel com deploy automático no push para main. Branch strategy: main (prod) + dev (staging).</div>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac)"></div>
+            <div class="task-content">
+              <div class="task-name">Instalar e configurar Design System EOS</div>
+              <div class="task-desc">Tokens CSS, componentes base (Button, Card, Label, Badge, Toast), layout shell com nav fixo. Tudo do EOS Design System v1 implementado antes de qualquer tela.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-label">Supabase — Data Model Completo</div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac)"></div>
+            <div class="task-content">
+              <div class="task-name">Auth + profiles</div>
+              <div class="task-desc">Supabase Auth nativo. Tabela <span class="mono" style="font-size:11px;color:var(--ac2)">profiles</span> com <span class="mono" style="font-size:11px;color:var(--ac2)">user_id FK → auth.users</span>. RLS ativado desde o dia 1 — cada usuário lê e escreve apenas seus próprios dados.</div>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac)"></div>
+            <div class="task-content">
+              <div class="task-name">family_members</div>
+              <div class="task-desc">id, profile_id, name, age, medical_conditions (array), mobility, priority. Relação com profiles via FK. RLS herdado.</div>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac)"></div>
+            <div class="task-content">
+              <div class="task-name">resources (inventário flexível)</div>
+              <div class="task-desc">Substituir campos fixos por modelo de itens: id, profile_id, canonical_key, name, category, quantity, unit, acquired_at. canonical_key é o elo de deduplicação cross-cenário.</div>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac)"></div>
+            <div class="task-content">
+              <div class="task-name">scenarios</div>
+              <div class="task-desc">id, profile_id, type (enum tipado), duration_days, severity, special_conditions (array), status, created_at. Múltiplos cenários por profile. Um usuário pode ter Furacão Cat 4 + EMP + Pandemia simultâneos.</div>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac)"></div>
+            <div class="task-content">
+              <div class="task-name">checklist_templates + checklist_items</div>
+              <div class="task-desc">templates: id, scenario_id, generated_at, profile_snapshot (JSON), is_stale. items: id, template_id, name, quantity, unit, tier (essential/moderate/excellent), category, rationale, source_reference, canonical_key, order.</div>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac)"></div>
+            <div class="task-content">
+              <div class="task-name">circles + circle_members + circle_strength</div>
+              <div class="task-desc">circles: id, name, leader_id, invite_code, visibility, created_at. circle_members: role (leader/member/pending). circle_strength: score calculado via trigger, atualizado a cada mudança de inventário de qualquer membro.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="warn-box">
+        ⚠ <span>RLS (Row Level Security) deve ser configurado em <strong>todas</strong> as tabelas nessa fase. Adicionar depois é tecnicamente possível mas arriscado e trabalhoso.</span>
+      </div>
+
+      <div class="deliverable">
+        <div class="deliverable-label">Entregáveis da Fase 1</div>
+        <div class="deliverable-items">
+          <div class="deliverable-item">Repositório configurado com CI/CD funcionando</div>
+          <div class="deliverable-item">Design System implementado como componentes reutilizáveis</div>
+          <div class="deliverable-item">Todas as tabelas criadas no Supabase com RLS ativo</div>
+          <div class="deliverable-item">Auth funcionando (signup, login, logout, sessão persistida)</div>
+          <div class="deliverable-item">Migrations versionadas no repositório</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-connector"></div>
+
+  <!-- ══════════════════════════════════════════
+       FASE 2
+  ══════════════════════════════════════════ -->
+  <div class="phase" id="p2">
+    <div class="phase-header" onclick="toggle('p2')">
+      <div class="phase-num mono">02</div>
+      <div class="phase-meta">
+        <div class="phase-tag" style="color:var(--ac)">Produto</div>
+        <div class="phase-title">Profile, Família & Cenários</div>
+        <div class="phase-sub">As telas de configuração. O usuário constrói quem ele é e o que pode acontecer. Essa é a coleta de contexto que alimenta toda a inteligência posterior.</div>
+        <div class="phase-duration mono">2 semanas</div>
+      </div>
+    </div>
+    <div class="phase-body">
+
+      <div class="task-group">
+        <div class="task-group-label">Tela — Profile Setup</div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac)"></div>
+            <div class="task-content">
+              <div class="task-name">Formulário de perfil principal</div>
+              <div class="task-desc">Nome, localização (cidade/estado/tipo de região), tipo de moradia (casa/apartamento/rural/off-grid). Salva em profiles.</div>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac)"></div>
+            <div class="task-content">
+              <div class="task-name">Gerenciamento de membros da família</div>
+              <div class="task-desc">Adicionar/editar/remover membros. Por membro: nome, idade, condições médicas (chips selecionáveis: diabetes, hipertensão, mobilidade reduzida, etc.), prioridade. Interface com cards, não tabela.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-label">Tela — Cenários</div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac)"></div>
+            <div class="task-content">
+              <div class="task-name">Seleção de cenários tipados</div>
+              <div class="task-desc">Grade de cards com os tipos: Furacão, Terremoto, Enchente, Apagão, Racionamento de Água, EMP, Fallout, Pandemia, Incêndio Florestal, Crise Civil, Evacuação. Cada card tem ícone, nome e descrição curta. Usuário pode ativar múltiplos.</div>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac)"></div>
+            <div class="task-content">
+              <div class="task-name">Configuração por cenário</div>
+              <div class="task-desc">Ao selecionar um cenário: slider de duração (1–90 dias), severidade (leve/moderado/severo), condições especiais detectadas automaticamente do profile (ex: "Membro diabético identificado — insulina adicionada à lista crítica").</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dep-box">
+        <strong>Dependência:</strong> Fase 1 completa. Todas as operações CRUD desta fase gravam diretamente no Supabase via client-side com RLS.
+      </div>
+
+      <div class="deliverable">
+        <div class="deliverable-label">Entregáveis da Fase 2</div>
+        <div class="deliverable-items">
+          <div class="deliverable-item">Usuário consegue criar e editar seu perfil completo</div>
+          <div class="deliverable-item">Usuário consegue adicionar membros da família com condições médicas</div>
+          <div class="deliverable-item">Usuário consegue ativar múltiplos cenários com parâmetros</div>
+          <div class="deliverable-item">Dados persistidos no Supabase e visíveis entre sessões</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-connector"></div>
+
+  <!-- ══════════════════════════════════════════
+       FASE 3
+  ══════════════════════════════════════════ -->
+  <div class="phase" id="p3">
+    <div class="phase-header" onclick="toggle('p3')">
+      <div class="phase-num mono">03</div>
+      <div class="phase-meta">
+        <div class="phase-tag" style="color:var(--ac2)">Inteligência</div>
+        <div class="phase-title">Motor de Decisão & Geração de Checklists</div>
+        <div class="phase-sub">O coração do EOS. A LLM lê o perfil completo e gera checklists prescritas por cenário, em 3 tiers, com quantidades calculadas por pessoa e justificativas rastreáveis por fonte.</div>
+        <div class="phase-duration mono">3 semanas</div>
+      </div>
+    </div>
+    <div class="phase-body">
+
+      <div class="task-group">
+        <div class="task-group-label">Rules Engine (determinístico)</div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac2)"></div>
+            <div class="task-content">
+              <div class="task-name">Regras de prioridade e escalada</div>
+              <div class="task-desc">Implementar antes da LLM. Exemplos: IF membro_diabético → insulina entra no tier Essential obrigatoriamente. IF mobilidade_reduzida → plano de evacuação não pode incluir caminhada longa. IF crianças_menores_5 → água mínima sobe 20%. Essas regras nunca são sobrescritas pela LLM.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-label">Prompt 1 — Geração de Checklist</div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac2)"></div>
+            <div class="task-content">
+              <div class="task-name">Arquitetura do prompt e output estruturado</div>
+              <div class="task-desc">Input: profile completo (família, condições médicas, localização, moradia) + tipo de cenário + duração + severidade. Output: JSON com array de itens por tier. Cada item tem: name, quantity (calculada), unit, category, rationale, source_reference, canonical_key.</div>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac2)"></div>
+            <div class="task-content">
+              <div class="task-name">Cálculo de quantidade por pessoa</div>
+              <div class="task-desc">A LLM recebe a composição familiar e calcula: água = (adultos × 2L + crianças × 1.5L + idosos × 2L) × dias × fator de severidade. Mesma lógica para calorias, medicamentos, combustível. Os números aparecem com a conta explícita no campo rationale.</div>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac2)"></div>
+            <div class="task-content">
+              <div class="task-name">Serverless function — /api/generate-checklist</div>
+              <div class="task-desc">Recebe scenario_id + profile_id. Busca dados do Supabase. Monta contexto. Chama Claude API. Salva template + items no banco. Retorna template_id. Timeout: 30s. Fallback: servir regras determinísticas puras sem LLM.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-label">Tela — Checklist por Cenário</div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac2)"></div>
+            <div class="task-content">
+              <div class="task-name">Visualização em 3 tiers</div>
+              <div class="task-desc">Tabs ou acordeão: Essencial / Moderado / Excelente. Cada item mostra: nome, quantidade, unidade, categoria (chip colorido), e ao expandir: rationale + fonte. Barra de progresso por tier no topo.</div>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac2)"></div>
+            <div class="task-content">
+              <div class="task-name">Marcar item como adquirido</div>
+              <div class="task-desc">Tap no item → status muda para acquired → grava em user_inventory via canonical_key → progresso do tier recalcula em tempo real. Item adquirido em um cenário reflete automaticamente em todos os outros cenários que usam o mesmo canonical_key.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="warn-box">
+        ⚠ <span>O fallback sem LLM deve ser implementado antes de ir para produção. Em uma emergência real, timeout da API não é aceitável.</span>
+      </div>
+
+      <div class="deliverable">
+        <div class="deliverable-label">Entregáveis da Fase 3</div>
+        <div class="deliverable-items">
+          <div class="deliverable-item">LLM gera checklist prescrita com quantidades calculadas por pessoa</div>
+          <div class="deliverable-item">Itens divididos em Essencial / Moderado / Excelente com justificativa</div>
+          <div class="deliverable-item">Marcar item como adquirido atualiza o inventário global</div>
+          <div class="deliverable-item">Cross-scenario deduplication funcionando via canonical_key</div>
+          <div class="deliverable-item">Fallback determinístico implementado e testado</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-connector"></div>
+
+  <!-- ══════════════════════════════════════════
+       FASE 4
+  ══════════════════════════════════════════ -->
+  <div class="phase" id="p4">
+    <div class="phase-header" onclick="toggle('p4')">
+      <div class="phase-num mono">04</div>
+      <div class="phase-meta">
+        <div class="phase-tag" style="color:var(--ac2)">Inteligência</div>
+        <div class="phase-title">Progressão Inteligente & Knowledge Base</div>
+        <div class="phase-sub">A LLM passa de geradora de listas para conselheira contínua. A cada item adquirido, o sistema reavalia e sugere o próximo passo mais impactante — incluindo novos cenários.</div>
+        <div class="phase-duration mono">3 semanas</div>
+      </div>
+    </div>
+    <div class="phase-body">
+
+      <div class="task-group">
+        <div class="task-group-label">Knowledge Base</div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac2)"></div>
+            <div class="task-content">
+              <div class="task-name">Pipeline de indexação de documentos</div>
+              <div class="task-desc">Fontes: FEMA Emergency Supply List, CDC Emergency Preparedness, Red Cross Disaster Handbook, Military Survival FM 21-76. Pipeline: PDF → extração de texto → chunking por seção → embedding (text-embedding-3-small) → armazenamento em pgvector no Supabase. Chunks tagueados por scenario_type e item_category.</div>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac2)"></div>
+            <div class="task-content">
+              <div class="task-name">Retrieval integrado ao Prompt 1</div>
+              <div class="task-desc">Antes de chamar a LLM, buscar os chunks mais relevantes da knowledge base para o cenário + categorias presentes no profile. Injetar no contexto do prompt. Isso é o que torna as recomendações rastreáveis por fonte.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-label">Prompt 2 — Avaliação de Progresso</div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac2)"></div>
+            <div class="task-content">
+              <div class="task-name">Análise contínua do inventário</div>
+              <div class="task-desc">Triggered a cada item marcado. Input: checklist completa com status + inventário atual. Output: nível de preparação por tier (%), gaps críticos identificados, próximo item de maior impacto, quais cenários adicionais já estão parcialmente cobertos com o inventário atual.</div>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac2)"></div>
+            <div class="task-content">
+              <div class="task-name">Prompt 3 — Cross-Scenario Intelligence</div>
+              <div class="task-desc">Triggered ao completar um tier ou um cenário. Input: todos os cenários ativos + inventário agregado. Output: mapa de cobertura (quais itens servem múltiplos cenários), sequência ótima de aquisição, sugestão do próximo cenário baseado em overlap.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-label">Dashboard Multi-Cenário</div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac2)"></div>
+            <div class="task-content">
+              <div class="task-name">Visão geral de todos os cenários ativos</div>
+              <div class="task-desc">Card por cenário com: nome, barra de progresso por tier (Essencial X% / Moderado X% / Excelente X%), próxima ação recomendada, badge de status. Ordenado por criticidade calculada.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="deliverable">
+        <div class="deliverable-label">Entregáveis da Fase 4</div>
+        <div class="deliverable-items">
+          <div class="deliverable-item">Knowledge base indexada e integrada ao sistema de geração</div>
+          <div class="deliverable-item">Sistema avalia progresso e sugere próximo passo após cada aquisição</div>
+          <div class="deliverable-item">Cross-scenario intelligence identifica sequência ótima de compra</div>
+          <div class="deliverable-item">Dashboard mostra todos os cenários com progresso em tempo real</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-connector"></div>
+
+  <!-- ══════════════════════════════════════════
+       FASE 5
+  ══════════════════════════════════════════ -->
+  <div class="phase" id="p5">
+    <div class="phase-header" onclick="toggle('p5')">
+      <div class="phase-num mono">05</div>
+      <div class="phase-meta">
+        <div class="phase-tag" style="color:var(--ac3)">Social</div>
+        <div class="phase-title">Círculos — Resiliência Coletiva</div>
+        <div class="phase-sub">A camada social do EOS. Famílias formam círculos privados, somam inventários, e constroem força coletiva medida em preparação real — não em número de membros.</div>
+        <div class="phase-duration mono">3 semanas</div>
+      </div>
+    </div>
+    <div class="phase-body">
+
+      <div class="task-group">
+        <div class="task-group-label">Criação e Gestão de Círculos</div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac3)"></div>
+            <div class="task-content">
+              <div class="task-name">Criar e configurar um Círculo</div>
+              <div class="task-desc">Nome, visibilidade (privado/descobrível), geração de invite_code único. O criador torna-se líder automaticamente. Interface de gestão de membros com roles.</div>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac3)"></div>
+            <div class="task-content">
+              <div class="task-name">Fluxo de entrada — solicitação e aprovação</div>
+              <div class="task-desc">Candidato usa invite_code ou descobre o círculo. Sistema calcula e exibe o preparedness score do candidato para o líder antes da decisão. Líder vê: score geral, cenários cobertos, e impacto que o candidato teria na força do círculo se aceito. Aceitar → membro. Rejeitar → notificação.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-label">Circle Strength Score</div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac3)"></div>
+            <div class="task-content">
+              <div class="task-name">Cálculo do score coletivo</div>
+              <div class="task-desc">Score = Σ (preparedness_score de cada membro × peso do cenário). Recalculado via Supabase trigger a cada mudança de inventário de qualquer membro. Armazenado em circle_strength com breakdown por tier e cenário.</div>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac3)"></div>
+            <div class="task-content">
+              <div class="task-name">Capability badges</div>
+              <div class="task-desc">Em vez de apenas número, exibir o que o círculo consegue fazer: "Sustenta 12 pessoas por 30 dias sem água externa", "Capacidade médica para trauma básico", "Geração independente de energia". Mais legível e motivador que score abstrato.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-label">Compartilhamento de Inventário (Modelo Híbrido)</div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac3)"></div>
+            <div class="task-content">
+              <div class="task-name">Privacidade por categoria</div>
+              <div class="task-desc">Itens de energy, communication e shelter são visíveis para o círculo por padrão — são recursos coletivos. Itens de food, water e medical são privados por padrão — expor escassez cria risco. Cada membro pode ajustar individualmente.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-label">Prompt 4 — Circle Intelligence</div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac3)"></div>
+            <div class="task-content">
+              <div class="task-name">Análise coletiva e sugestões de fortalecimento</div>
+              <div class="task-desc">Input: inventário agregado do círculo + cenários ativos dos membros. Output: gaps coletivos, distribuição de recursos, qual aquisição coletiva aumenta mais o score, e (no fluxo de aprovação) impacto do candidato no círculo.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dep-box">
+        <strong>Dependência:</strong> Fases 1–4 completas. Circle strength depende de inventário individual funcionando (Fase 3) e cross-scenario intelligence (Fase 4).
+      </div>
+
+      <div class="deliverable">
+        <div class="deliverable-label">Entregáveis da Fase 5</div>
+        <div class="deliverable-items">
+          <div class="deliverable-item">Usuário pode criar um Círculo e convidar membros</div>
+          <div class="deliverable-item">Líder aprova/rejeita com score e impacto do candidato visíveis</div>
+          <div class="deliverable-item">Circle Strength Score calculado e atualizado em tempo real</div>
+          <div class="deliverable-item">Capability badges gerados com base no inventário coletivo</div>
+          <div class="deliverable-item">Modelo híbrido de privacidade por categoria funcionando</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-connector"></div>
+
+  <!-- ══════════════════════════════════════════
+       FASE 6
+  ══════════════════════════════════════════ -->
+  <div class="phase" id="p6">
+    <div class="phase-header" onclick="toggle('p6')">
+      <div class="phase-num mono">06</div>
+      <div class="phase-meta">
+        <div class="phase-tag" style="color:var(--warn)">Resiliência</div>
+        <div class="phase-title">Offline Mode & PWA</div>
+        <div class="phase-sub">Um sistema de emergência que fica offline durante emergências não é um sistema de emergência. Essa fase garante que tudo que importa funciona sem internet.</div>
+        <div class="phase-duration mono">2 semanas</div>
+      </div>
+    </div>
+    <div class="phase-body">
+
+      <div class="task-group">
+        <div class="task-group-label">Service Worker & Cache Strategy</div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-dot" style="background:var(--warn)"></div>
+            <div class="task-content">
+              <div class="task-name">Cache das rotas críticas</div>
+              <div class="task-desc">Cache-first para: /dashboard, /checklist, /plan, /scenario. Network-first para: /circles (dados sociais podem ser stale). Stale-while-revalidate para: knowledge base chunks. Usar Workbox para gerenciar estratégias por rota.</div>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-dot" style="background:var(--warn)"></div>
+            <div class="task-content">
+              <div class="task-name">IndexedDB para dados do usuário</div>
+              <div class="task-desc">Persistir localmente: último plano gerado, checklist completa com status de cada item, perfil + família. Sincronização com Supabase quando conexão retorna (conflict resolution: last-write-wins para inventário, merge para checklists).</div>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-dot" style="background:var(--warn)"></div>
+            <div class="task-content">
+              <div class="task-name">Knowledge base chunks pré-carregados</div>
+              <div class="task-desc">Os top 50 chunks mais relevantes para os cenários ativos do usuário são baixados e armazenados no IndexedDB no momento que ele está online. Esses chunks alimentam o fallback offline do motor de decisão.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-label">Indicadores de Estado do Sistema</div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-dot" style="background:var(--warn)"></div>
+            <div class="task-content">
+              <div class="task-name">Status indicator na nav (3 estados)</div>
+              <div class="task-desc">CONNECTED (verde) → DEGRADED (laranja, sem IA mas com cache) → OFFLINE (vermelho, somente local). Transição automática. O usuário sempre sabe em qual estado o sistema está operando.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-label">PWA Configuration</div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-dot" style="background:var(--warn)"></div>
+            <div class="task-content">
+              <div class="task-name">Manifest + meta tags + ícones</div>
+              <div class="task-desc">Configurar manifest.json completo. Meta tags PWA conforme EOS Design System v1 (seção 11). Ícones para iOS e Android. Splash screens. Testar instalação como app em iOS Safari e Android Chrome.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="deliverable">
+        <div class="deliverable-label">Entregáveis da Fase 6</div>
+        <div class="deliverable-items">
+          <div class="deliverable-item">App instalável como PWA em iOS e Android</div>
+          <div class="deliverable-item">Checklists e planos acessíveis sem internet</div>
+          <div class="deliverable-item">Marcar itens como adquirido funciona offline e sincroniza ao voltar</div>
+          <div class="deliverable-item">Indicador de estado (Connected/Degraded/Offline) funcionando</div>
+          <div class="deliverable-item">Knowledge base chunks dos cenários ativos pré-carregados</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-connector"></div>
+
+  <!-- ══════════════════════════════════════════
+       FASE 7
+  ══════════════════════════════════════════ -->
+  <div class="phase" id="p7">
+    <div class="phase-header" onclick="toggle('p7')">
+      <div class="phase-num mono">07</div>
+      <div class="phase-meta">
+        <div class="phase-tag" style="color:var(--ac3)">Hardware</div>
+        <div class="phase-title">LoRa Mesh & Comunicação Descentralizada</div>
+        <div class="phase-sub">A feature mais diferenciada do EOS. Comunicação entre dispositivos sem nenhuma infraestrutura. Relevante quando até o celular para de funcionar.</div>
+        <div class="phase-duration mono">3 semanas</div>
+      </div>
+    </div>
+    <div class="phase-body">
+
+      <div class="task-group">
+        <div class="task-group-label">Hardware</div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac3)"></div>
+            <div class="task-content">
+              <div class="task-name">Seleção e prototipagem do hardware</div>
+              <div class="task-desc">Módulo: ESP32 + LoRa SX1276 (868MHz para Brasil/Europa, 915MHz para EUA). Protocolo mesh: Meshtastic (open source, battle-tested). Alcance: 1–10km em linha reta. Bateria: 18650 Li-Ion, autonomia mínima 72h.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-label">Integração App ↔ Hardware</div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac3)"></div>
+            <div class="task-content">
+              <div class="task-name">Bridge BLE entre app e dispositivo</div>
+              <div class="task-desc">O smartphone se conecta ao ESP32 via Bluetooth LE. O app envia mensagens curtas (planos de ação, status de checklist, localização) que o ESP32 retransmite via LoRa para outros dispositivos EOS na área.</div>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac3)"></div>
+            <div class="task-content">
+              <div class="task-name">Protocolo de mensagens EOS</div>
+              <div class="task-desc">Formato comprimido para LoRa (payload máximo ~250 bytes). Tipos de mensagem: STATUS (estou bem/preciso de ajuda), RESOURCE (tenho X, preciso de Y), PLAN (compartilhar plano de ação), LOCATION.</div>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac3)"></div>
+            <div class="task-content">
+              <div class="task-name">UI do estado OFFLINE no app</div>
+              <div class="task-desc">Quando em modo LoRa: mostrar dispositivos detectados na rede mesh, mensagens recebidas, e interface simplificada de envio. O app funciona como terminal do hardware.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="warn-box">
+        ⚠ <span>Esta fase requer hardware físico para testes. Iniciar a prototipagem eletrônica em paralelo com a Fase 5 para não atrasar o cronograma.</span>
+      </div>
+
+      <div class="deliverable">
+        <div class="deliverable-label">Entregáveis da Fase 7</div>
+        <div class="deliverable-items">
+          <div class="deliverable-item">Protótipo de hardware ESP32 + LoRa funcional</div>
+          <div class="deliverable-item">App conecta ao dispositivo via BLE e envia/recebe mensagens</div>
+          <div class="deliverable-item">Rede mesh entre 2+ dispositivos funcionando</div>
+          <div class="deliverable-item">UI do modo OFFLINE reflete comunicação LoRa ativa</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-connector"></div>
+
+  <!-- ══════════════════════════════════════════
+       FASE 8 — LAUNCH
+  ══════════════════════════════════════════ -->
+  <div class="phase" id="p8">
+    <div class="phase-header" onclick="toggle('p8')">
+      <div class="phase-num mono" style="background:var(--ac);color:#08080d;border-color:var(--ac)">🚀</div>
+      <div class="phase-meta">
+        <div class="phase-tag" style="color:var(--ac)">Lançamento</div>
+        <div class="phase-title">Beta Fechado & Lançamento Público</div>
+        <div class="phase-sub">Onboarding das famílias fundadoras, ajustes finais com feedback real, e lançamento público com a landing page ativa.</div>
+        <div class="phase-duration mono">2 semanas</div>
+      </div>
+    </div>
+    <div class="phase-body">
+
+      <div class="task-group">
+        <div class="task-group-label">Beta Fechado</div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac)"></div>
+            <div class="task-content">
+              <div class="task-name">Onboarding das famílias da waitlist</div>
+              <div class="task-desc">Começar com 10–20 famílias em regiões de risco real. Acompanhar de perto: onde travam no onboarding, quais cenários mais ativam, taxa de completude do tier Essencial na primeira semana.</div>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac)"></div>
+            <div class="task-content">
+              <div class="task-name">Refinamento baseado em uso real</div>
+              <div class="task-desc">Os primeiros usuários vão revelar gaps que nenhum teste interno encontra. Reservar 1 semana inteira para iteração rápida com base no feedback dessas famílias.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-label">Lançamento Público</div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac)"></div>
+            <div class="task-content">
+              <div class="task-name">Landing page ao vivo com waitlist aberta</div>
+              <div class="task-desc">A landing page já existe e está refinada. Conectar o formulário de email a uma lista real (Resend ou similar). Ativar analytics (Vercel Analytics — privacy-first).</div>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-dot" style="background:var(--ac)"></div>
+            <div class="task-content">
+              <div class="task-name">Monitoramento de produção</div>
+              <div class="task-desc">Alertas para: erro na chamada LLM, latência > 10s na geração de checklist, falha no cálculo do circle_strength. Logs estruturados no Vercel.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="deliverable">
+        <div class="deliverable-label">Entregáveis da Fase 8</div>
+        <div class="deliverable-items">
+          <div class="deliverable-item">10–20 famílias fundadoras ativas e com feedback documentado</div>
+          <div class="deliverable-item">Landing page ao vivo com waitlist funcional</div>
+          <div class="deliverable-item">Monitoramento de produção ativo</div>
+          <div class="deliverable-item">EOS v1.0 público</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER NOTE -->
+  <div class="footer-note">
+    <strong>Princípio de execução:</strong> Cada fase entrega algo que funciona de ponta a ponta. Não existe "vamos integrar tudo no final". A Fase 3 já é um produto utilizável — com perfil, cenário e checklist gerada pela LLM. As fases seguintes adicionam inteligência, camadas sociais e resiliência de infraestrutura sobre uma base que já funciona.<br/><br/>
+    <strong>Velocidade vs. perfeição:</strong> Conforme o blueprint de engenharia original — execução e clareza valem mais que perfeição. O fallback determinístico garante que o produto nunca quebra completamente. O refinamento é contínuo.
+  </div>
+
+</div>
+
+<script>
+function toggle(id) {
+  const phase = document.getElementById(id);
+  const isOpen = phase.classList.contains('open');
+  phase.classList.toggle('open', !isOpen);
+}
+
+// Keyboard accessible
+document.querySelectorAll('.phase-header').forEach(h => {
+  h.setAttribute('tabindex', '0');
+  h.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      h.click();
+    }
+  });
+});
+</script>
+</body>
+</html>
