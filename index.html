@@ -16,7 +16,7 @@ const { useState, useEffect, useRef } = React;
 
 const T = {
   en: {
-    nav_how: "How It Works", nav_demo: "Demo",
+    nav_how: "How It Works", nav_demo: "Demo", nav_roadmap: "Roadmap",
     hero_tag: "Emergency Operating System",
     hero_h1: "When everything fails,", hero_h1b: "know what to do next.",
     hero_sub: "EOS transforms chaos into prioritized action — for any family, any crisis, with or without internet.",
@@ -60,7 +60,7 @@ const T = {
     footer: "© 2025 EOS Systems. All critical data stays local.",
   },
   pt: {
-    nav_how: "Como Funciona", nav_demo: "Demo",
+    nav_how: "Como Funciona", nav_demo: "Demo", nav_roadmap: "Roadmap",
     hero_tag: "Sistema Operacional de Emergência",
     hero_h1: "Quando tudo falhar,", hero_h1b: "saiba o que fazer.",
     hero_sub: "EOS transforma o caos em ação prioritária — para qualquer família, qualquer crise, com ou sem internet.",
@@ -203,6 +203,10 @@ function App() {
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <a href="#how" style={{ fontSize: 12, fontWeight: 600, color: "var(--mu)" }}>{t.nav_how}</a>
           <a href="#demo" style={{ fontSize: 12, fontWeight: 600, color: "var(--mu)" }}>{t.nav_demo}</a>
+          <a href="eos-roadmap.html" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "var(--ac)", background: "rgba(0,229,160,0.08)", border: "1px solid rgba(0,229,160,0.2)", borderRadius: 8, padding: "4px 10px", letterSpacing: ".3px" }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--ac)", display: "inline-block", animation: "blink 1.4s ease-in-out infinite" }} />
+            {t.nav_roadmap}
+          </a>
           <button onClick={() => setLang(l => l === "en" ? "pt" : "en")} className="btn bs" style={{ padding: "5px 12px", fontSize: 11, fontWeight: 700, letterSpacing: 1 }}>{lang === "en" ? "PT" : "EN"}</button>
         </div>
       </nav>
@@ -407,8 +411,12 @@ function App() {
       </div>
 
       {/* FOOTER */}
-      <footer style={{ borderTop: "1px solid var(--bd)", padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--bg)" }}>
+      <footer style={{ borderTop: "1px solid var(--bd)", padding: "20px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--bg)", flexWrap: "wrap", gap: 12 }}>
         <span style={{ fontSize: 15, fontWeight: 700, color: "var(--tx)", letterSpacing: 2 }}>EOS</span>
+        <a href="eos-roadmap.html" style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 11, fontWeight: 700, color: "var(--ac)", letterSpacing: ".5px", textDecoration: "none", opacity: .85 }}>
+          <span style={{ fontFamily: "monospace" }}>▸</span>
+          {lang === "en" ? "Execution Roadmap" : "Roadmap de Execução"}
+        </a>
         <span style={{ fontSize: 11, color: "var(--mu)" }}>{t.footer}</span>
       </footer>
     </>
