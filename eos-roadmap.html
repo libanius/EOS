@@ -119,6 +119,11 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div class="eyebrow">Execution Roadmap</div>
     <h1>EOS — <span>Build</span> Queue</h1>
     <p class="header-sub">Tarefas em ordem estrita de execução. Roxo = Claude executa, tem prompt pronto. Âmbar = só você pode fazer. Cinza = você valida.</p>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap;">
+      <span id="sync-status" style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--warn);">◌ LOADING…</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--mu);letter-spacing:.5px;">— sincronizado com GitHub</span>
+      <button onclick="promptToken()" style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.5px;padding:3px 8px;border-radius:4px;border:1px solid var(--bd);background:var(--sf2);color:var(--mu);cursor:pointer;">⚙ TOKEN</button>
+    </div>
   </div>
 
   <div class="legend">
@@ -874,24 +879,133 @@ Adicionar modo 'LORA_MESH' no ConnectivityService (entre LOCAL_AI e SURVIVAL).
 ModeIndicator: novo estado dot azul/roxo + "LORA MESH".`}
 };
 
-const SK='eos_rdmp_v4';
-function load(){try{return JSON.parse(localStorage.getItem(SK)||'{}')}catch{return {}}}
-function save(s){localStorage.setItem(SK,JSON.stringify(s))}
-let S=load();
+// ─── GITHUB SYNC ────────────────────────────────────────────
+const GH = {
+  repo:  'libanius/EOS',
+  file:  'eos-roadmap-state.json',
+  sha:   null,
+  timer: null,
+  pending: false,
+  get token(){ return localStorage.getItem('eos_gh_token') || '' }
+};
 
+const SK = 'eos_rdmp_v4_local';
+function lsLoad(){ try{ return JSON.parse(localStorage.getItem(SK)||'{}') }catch{ return {} } }
+function lsSave(s){ localStorage.setItem(SK, JSON.stringify(s)); }
+let S = lsLoad();
+
+// ── Sync status indicator ──
+function setSyncStatus(status) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  const map = {
+    idle:    { text: '● SAVED',    color: 'var(--ac)' },
+    saving:  { text: '◌ SAVING…',  color: 'var(--warn)' },
+    error:   { text: '✕ OFFLINE',  color: 'var(--ac3)' },
+    loading: { text: '◌ LOADING…', color: 'var(--warn)' },
+    notoken: { text: '⚠ TOKEN?',   color: 'var(--ac3)' },
+  };
+  const m = map[status] || map.idle;
+  el.textContent = m.text;
+  el.style.color = m.color;
+}
+
+// ── Token setup ──
+function promptToken() {
+  const t = prompt('Cole seu GitHub Personal Access Token (repo scope).\nFica salvo só no seu browser, nunca vai para o código.');
+  if (t && t.trim()) {
+    localStorage.setItem('eos_gh_token', t.trim());
+    ghLoad();
+  }
+}
+
+// ── Fetch state from GitHub on page load ──
+async function ghLoad() {
+  if (!GH.token) { setSyncStatus('notoken'); restore(); upAll(); return; }
+  setSyncStatus('loading');
+  try {
+    const r = await fetch(
+      `https://api.github.com/repos/${GH.repo}/contents/${GH.file}`,
+      { headers: { Authorization: `Bearer ${GH.token}`, Accept: 'application/vnd.github+json' } }
+    );
+    if (r.status === 404) { setSyncStatus('idle'); restore(); upAll(); return; }
+    if (!r.ok) throw new Error(r.status);
+    const data = await r.json();
+    GH.sha = data.sha;
+    S = JSON.parse(atob(data.content.replace(/\n/g,'')));
+    lsSave(S);
+    setSyncStatus('idle');
+  } catch(e) {
+    console.warn('GitHub load failed, using local cache', e);
+    setSyncStatus('error');
+  }
+  restore(); upAll();
+}
+
+// ── Debounced save (1.5s after last click) ──
+function scheduleSave() {
+  GH.pending = true;
+  setSyncStatus('saving');
+  clearTimeout(GH.timer);
+  GH.timer = setTimeout(ghSave, 1500);
+}
+
+async function ghSave() {
+  if (!GH.pending) return;
+  if (!GH.token) { setSyncStatus('notoken'); return; }
+  GH.pending = false;
+  lsSave(S);
+
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(S, null, 2))));
+  const done  = Object.keys(S).filter(k => !k.startsWith('c_') && S[k]).length;
+  const total = document.querySelectorAll('.task').length;
+
+  const body = {
+    message: `progress: ${done}/${total} tasks (${Math.round(done/total*100)}%)`,
+    content,
+    ...(GH.sha ? { sha: GH.sha } : {})
+  };
+
+  try {
+    setSyncStatus('saving');
+    const r = await fetch(
+      `https://api.github.com/repos/${GH.repo}/contents/${GH.file}`,
+      {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${GH.token}`,
+          Accept: 'application/vnd.github+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      }
+    );
+    if (!r.ok) throw new Error(r.status);
+    const data = await r.json();
+    GH.sha = data.content.sha;
+    setSyncStatus('idle');
+  } catch(e) {
+    console.warn('GitHub save failed', e);
+    setSyncStatus('error');
+    GH.pending = true;
+  }
+}
+
+// ─── STATE ──────────────────────────────────────────────────
 function tT(id){
   const el=document.getElementById(id);
   if(!el)return;
   el.classList.toggle('done');
   S[id]=el.classList.contains('done');
-  save(S);upAll();
+  scheduleSave();
+  upAll();
 }
 function tP(id){
   const el=document.getElementById(id);
   if(!el)return;
   el.classList.toggle('collapsed');
   S['c_'+id]=el.classList.contains('collapsed');
-  save(S);
+  scheduleSave();
 }
 function ids(phId){
   const p=document.getElementById(phId);
@@ -942,12 +1056,17 @@ function copyP(){
 }
 function cReset(){
   if(!confirm('Resetar todo o progresso?'))return;
-  S={};save(S);
+  S={};
+  lsSave(S);
+  scheduleSave();
   document.querySelectorAll('.task').forEach(el=>el.classList.remove('done'));
   document.querySelectorAll('.phase').forEach(el=>el.classList.remove('collapsed','complete','in-progress'));
   upAll();
 }
-restore();upAll();
+
+// ─── BOOT ────────────────────────────────────────────────────
+restore(); upAll();   // render from local cache immediately
+ghLoad();             // then fetch from GitHub and re-render
 </script>
 </body>
 </html>
