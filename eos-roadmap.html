@@ -200,16 +200,16 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 <!-- ════════════════════ FASE 04 ════════════════════ -->
 <div class="phase" id="p4">
   <div class="ph" onclick="tP('p4')">
-    <div class="pnum">FASE 04</div><div class="ptitle">Claude API — Connected Mode</div>
+    <div class="pnum">FASE 04</div><div class="ptitle">OpenAI API — Connected Mode</div>
     <div class="pwk">Semanas 4–5</div><div class="db">✓ DONE</div>
     <svg class="rsv" viewBox="0 0 36 36"><circle class="rb" cx="18" cy="18" r="14"/><circle class="rf" cx="18" cy="18" r="14" id="r-p4"/></svg>
     <div class="chv">▾</div>
   </div>
   <div class="pb">
-    <div class="ms"><span>🏁</span><span>EOS gera plano real via Claude com perfil e inventário injetados — streaming funcionando</span></div>
+    <div class="ms"><span>🏁</span><span>EOS gera plano real via OpenAI com perfil e inventário injetados — streaming funcionando</span></div>
     <div class="sec"><div class="slbl">API & Orquestração</div>
-      <div class="task op" id="t41" onclick="tT('t41')"><div class="ck"><svg class="ci" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5" fill="none" stroke="#0a0a0f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="tc"><div class="tt">Salvar ANTHROPIC_API_KEY no .env.local e nas variáveis de ambiente do Vercel</div><div class="to"><span class="ob ob-p">Você</span></div></div></div>
-      <div class="task oc" id="t42" onclick="tT('t42')"><div class="ck"><svg class="ci" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5" fill="none" stroke="#0a0a0f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="tc"><div class="tt">API route POST /api/analyze: auth → buscar perfil+família+inventário → Rules Engine → RAG → Claude → parse → salvar</div><div class="to"><span class="ob ob-c">Claude</span><button class="pb-btn" onclick="sP(event,'t42')">▸ Prompt</button></div></div></div>
+      <div class="task op" id="t41" onclick="tT('t41')"><div class="ck"><svg class="ci" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5" fill="none" stroke="#0a0a0f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="tc"><div class="tt">Salvar OPENAI_API_KEY no .env.local e nas variáveis de ambiente do Vercel</div><div class="to"><span class="ob ob-p">Você</span></div></div></div>
+      <div class="task oc" id="t42" onclick="tT('t42')"><div class="ck"><svg class="ci" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5" fill="none" stroke="#0a0a0f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="tc"><div class="tt">API route POST /api/analyze: auth → buscar perfil+família+inventário → Rules Engine → RAG → OpenAI → parse → salvar</div><div class="to"><span class="ob ob-c">Claude</span><button class="pb-btn" onclick="sP(event,'t42')">▸ Prompt</button></div></div></div>
       <div class="task oc" id="t43" onclick="tT('t43')"><div class="ck"><svg class="ci" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5" fill="none" stroke="#0a0a0f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="tc"><div class="tt">Streaming com Server-Sent Events + error handling robusto (timeout, rate limit, parse error → fallback gracioso)</div><div class="to"><span class="ob ob-c">Claude</span><button class="pb-btn" onclick="sP(event,'t43')">▸ Prompt</button></div></div></div>
     </div>
     <div class="div"></div>
@@ -546,7 +546,7 @@ Fluxo obrigatório nesta ordem:
 3. RulesEngine.evaluate(query) — SEMPRE antes do LLM
 4. getRelevantChunks(scenario, scenarioType) — top-5 da knowledge base
 5. buildSystemPrompt(query, rulesResult, knowledgeChunks)
-6. Chamar Claude API (claude-sonnet-4-20250514, max_tokens:1500)
+6. Chamar OpenAI Responses API com o modelo configurado do projeto (max_output_tokens/max_tokens equivalente a ~1500)
 7. parseStructuredResponse(text, 'CONNECTED', rulesResult)
 8. Salvar action_plan no Supabase
 9. Retornar IntelligenceResponse
@@ -621,7 +621,7 @@ Usar operador <=> (cosine distance). Filtrar por scenario_type se fornecido.
 - Chamar match_documents via supabase.rpc()
 - Retornar string[] (só o content)
 
-3. Integrar em /api/analyze: chamar getRelevantChunks antes do Claude, passar para buildSystemPrompt() como terceiro argumento.`},
+3. Integrar em /api/analyze: chamar getRelevantChunks antes da OpenAI API, passar para buildSystemPrompt() como terceiro argumento.`},
   t63:{title:'Ativar eos-intelligence-layer.ts em produção',text:`Ativa o arquivo eos-intelligence-layer.ts para produção no projeto React Native EOS.
 
 O arquivo existe com imports comentados. Tarefas:
@@ -674,7 +674,7 @@ Visual por modo:
 - SURVIVAL MODE: dot #FF6B6B + texto "SURVIVAL MODE" + container vermelho
 
 Ao pressionar: Toast com descrição:
-- CONNECTED: "Claude AI ativo — inteligência completa"
+- CONNECTED: "OpenAI ativo — inteligência completa"
 - LOCAL AI: "IA no dispositivo — sem internet necessária"  
 - SURVIVAL MODE: "Motor de regras — modo básico ativo"
 
@@ -684,12 +684,12 @@ Transição de cor ao mudar modo: Animated.timing 300ms.`},
 1. app/api/checklist/generate/route.ts:
    - Input: { scenario_id, scenarioType, profileId }
    - Buscar perfil + família
-   - Chamar Claude com prompt tiered
+   - Chamar OpenAI com prompt tiered
    - Parsear JSON response
    - Insert na tabela checklists com canonical_key gerado
    - Retornar itens estruturados
 
-2. Prompt para Claude:
+2. Prompt para OpenAI:
 "Você é EOS. Gere checklist para [scenarioType] para família de [N] pessoas ([membros]).
 Responda APENAS em JSON: { items: [{ name, canonical_key, tier: ESSENTIAL|MODERATE|EXCELLENT, quantity, unit, reason }] }
 ESSENTIAL: sobreviver 72h. MODERATE: 1 semana. EXCELLENT: 2+ semanas.

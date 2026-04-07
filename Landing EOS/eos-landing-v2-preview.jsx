@@ -159,12 +159,12 @@ Respond ONLY with this structure. Be direct, no preamble:
 [1-2 critical gaps, or "None identified"]`;
 
     try {
-      const r2 = await fetch("https://api.anthropic.com/v1/messages", {
+      const r2 = await fetch("https://api.openai.com/v1/responses", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, messages: [{ role: "user", content: prompt }] }),
+        body: JSON.stringify({ model: "gpt-4.1", max_output_tokens: 1000, input: prompt }),
       });
       const data = await r2.json();
-      setResult(data.content?.map(b => b.text || "").join("") || "No response.");
+      setResult(data.output_text || "No response.");
     } catch { setResult("⚠️ Connection error. In a real emergency, EOS offline mode activates automatically."); }
     setLoading(false);
   };
